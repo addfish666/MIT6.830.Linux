@@ -40,6 +40,8 @@ public class CatalogTest extends SimpleDbTestBase {
         TupleDesc expected = Utility.getTupleDesc(2);
         TupleDesc actual = Database.getCatalog().getTupleDesc(id1);
 
+        System.out.println(expected);
+
         assertEquals(expected, actual);
     }
 

@@ -7,6 +7,8 @@ import java.io.Serializable;
  * specific table.
  */
 public class RecordId implements Serializable {
+    private PageId pageId;// 页号
+    private Integer tupleno;// 页内的偏移量
 
     private static final long serialVersionUID = 1L;
 
