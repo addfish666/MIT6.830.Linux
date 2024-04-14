@@ -29,8 +29,8 @@ public class TupleDesc implements Serializable {
         public final String fieldName;
 
         public TDItem(Type t, String n) {
-            this.fieldName = n;
             this.fieldType = t;
+            this.fieldName = n;
         }
 
         private String getFieldName(){

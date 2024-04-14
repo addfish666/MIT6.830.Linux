@@ -24,8 +24,12 @@ public class TupleDescTest extends SimpleDbTestBase {
         td1 = Utility.getTupleDesc(1, "td1");
         td2 = Utility.getTupleDesc(2, "td2");
 
+        System.out.println(td1);
+        System.out.println(td2);
+
         // test td1.combine(td2)
         td3 = TupleDesc.merge(td1, td2);
+        System.out.println(td3);
         assertEquals(3 , td3.numFields());
         assertEquals(3 * Type.INT_TYPE.getLen(), td3.getSize());
         for (int i = 0; i < 3; ++i)
@@ -34,6 +38,7 @@ public class TupleDescTest extends SimpleDbTestBase {
 
         // test td2.combine(td1)
         td3 = TupleDesc.merge(td2, td1);
+        System.out.println(td3);
         assertEquals(3 , td3.numFields());
         assertEquals(3 * Type.INT_TYPE.getLen(), td3.getSize());
         for (int i = 0; i < 3; ++i)
@@ -78,6 +83,7 @@ public class TupleDescTest extends SimpleDbTestBase {
 
         for (int len: lengths) {
             TupleDesc td = Utility.getTupleDesc(len);
+            System.out.println(td);
             for (int i = 0; i < len; ++i)
                 assertEquals(Type.INT_TYPE, td.getFieldType(i));
         }

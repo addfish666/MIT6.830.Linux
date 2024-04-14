@@ -11,7 +11,7 @@ public interface PageId {
     */
     int[] serialize();
 
-    /** @return the unique tableid hashcode with this PageId */
+    /** @return the unique tableId hashcode with this PageId */
     int getTableId();
 
     /**
