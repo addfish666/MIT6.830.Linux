@@ -108,6 +108,7 @@ public class HeapPageReadTest extends SimpleDbTestBase {
     @Test public void getNumEmptySlots() throws Exception {
         HeapPage page = new HeapPage(pid, EXAMPLE_DATA);
         assertEquals(484, page.getNumEmptySlots());
+        // 4096 * 8 / (8 * 8 + 1) = 504
     }
 
     /**

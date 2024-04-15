@@ -42,11 +42,13 @@ public class HeapPageIdTest extends SimpleDbTestBase {
         // at least.
         pid = new HeapPageId(1, 1);
         code1 = pid.hashCode();
+        System.out.println(code1);
         assertEquals(code1, pid.hashCode());
         assertEquals(code1, pid.hashCode());
 
         pid = new HeapPageId(2, 2);
         code2 = pid.hashCode();
+        System.out.println(code2);
         assertEquals(code2, pid.hashCode());
         assertEquals(code2, pid.hashCode());
     }

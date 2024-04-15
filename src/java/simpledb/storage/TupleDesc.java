@@ -11,6 +11,15 @@ import java.util.*;
 public class TupleDesc implements Serializable {
 
     private List<TDItem> tupleDescList = new ArrayList<>();
+
+    /**
+     * 获取item的数量
+     * @return
+     */
+    public int getItemLength() {
+        return this.tupleDescList.size();
+    }
+
     /**
      * A help class to facilitate organizing the information of each field
      * */
