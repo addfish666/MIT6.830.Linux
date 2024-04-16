@@ -39,7 +39,7 @@ public class BufferPool {
 
     private int numPages;
 //    private LRUCache<PageId, Page> buffer;
-    private Map<PageId, Page> buffer;
+    private ConcurrentHashMap<PageId, Page> buffer;
 
     /**
      * Creates a BufferPool that caches up to numPages pages.
@@ -100,7 +100,12 @@ public class BufferPool {
             if(numPages > buffer.size()) {
                 DbFile dbFile = Database.getCatalog().getDatabaseFile(pid.getTableId());
                 Page page = dbFile.readPage(pid);
-                if(page != null) buffer.put(pid, page);
+                if(page != null) {
+                    buffer.put(pid, page);
+                }
+                else {
+                    return null;
+                }
             }
             else {
                 throw new DbException("bufferPool is full");

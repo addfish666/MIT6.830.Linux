@@ -249,7 +249,7 @@ public class HeapFile implements DbFile {
         public boolean nextPage() throws DbException, TransactionAbortedException {
             while (true) {
                 num++;
-                if(num > numPages()) return false;
+                if(num >= numPages()) return false;
                 HeapPageId heapPageId = new HeapPageId(getId(), num);
                 HeapPage page = (HeapPage)bufferPool.getPage(tid,heapPageId,permissions);
                 if(page == null) continue;
