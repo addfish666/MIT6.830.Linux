@@ -103,9 +103,7 @@ public class BufferPool {
                 if(page != null) {
                     buffer.put(pid, page);
                 }
-                else {
-                    return null;
-                }
+                else return null;
             }
             else {
                 throw new DbException("bufferPool is full");
