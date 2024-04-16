@@ -10,6 +10,7 @@ import sun.misc.LRUCache;
 
 import java.io.*;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -38,7 +39,7 @@ public class BufferPool {
 
     private int numPages;
 //    private LRUCache<PageId, Page> buffer;
-    private Map<Integer, Page> buffer;
+    private Map<PageId, Page> buffer;
 
     /**
      * Creates a BufferPool that caches up to numPages pages.
@@ -81,16 +82,31 @@ public class BufferPool {
      * @param pid the ID of the requested page
      * @param perm the requested permissions on the page
      */
+//    public Page getPage(TransactionId tid, PageId pid, Permissions perm)
+//        throws TransactionAbortedException, DbException {
+//        // some code goes here
+//        if(!this.buffer.containsKey(pid.hashCode())) {
+//            DbFile dbFile = Database.getCatalog().getDatabaseFile(pid.getTableId());
+//            Page page = dbFile.readPage(pid);
+//            if(buffer.size() > numPages) evictPage();
+//            buffer.put(pid.hashCode(), page);
+//        }
+//        return this.buffer.get(pid.hashCode());
+//    }
     public Page getPage(TransactionId tid, PageId pid, Permissions perm)
-        throws TransactionAbortedException, DbException {
+            throws TransactionAbortedException, DbException {
         // some code goes here
-        if(!this.buffer.containsKey(pid.hashCode())) {
-            DbFile dbFile = Database.getCatalog().getDatabaseFile(pid.getTableId());
-            Page page = dbFile.readPage(pid);
-            if(buffer.size() > numPages) evictPage();
-            buffer.put(pid.hashCode(), page);
+        if(!this.buffer.containsKey(pid)) {
+            if(numPages > buffer.size()) {
+                DbFile dbFile = Database.getCatalog().getDatabaseFile(pid.getTableId());
+                Page page = dbFile.readPage(pid);
+                if(page != null) buffer.put(pid, page);
+            }
+            else {
+                throw new DbException("bufferPool is full");
+            }
         }
-        return this.buffer.get(pid.hashCode());
+        return this.buffer.get(pid);
     }
 
     /**

@@ -91,7 +91,7 @@ public class HeapFileReadTest extends SimpleDbTestBase {
 
     @Test
     public void testIteratorBasic() throws Exception {
-        HeapFile smallFile = SystemTestUtil.createRandomHeapFile(2, 3, null,
+        HeapFile smallFile = SystemTestUtil.createRandomHeapFile(2, 1000, null,
                 null);
 
         DbFileIterator it = smallFile.iterator(tid);
@@ -109,7 +109,7 @@ public class HeapFileReadTest extends SimpleDbTestBase {
             assertNotNull(it.next());
             count += 1;
         }
-        assertEquals(3, count);
+        assertEquals(1000, count);
         it.close();
     }
 
@@ -133,34 +133,34 @@ public class HeapFileReadTest extends SimpleDbTestBase {
         it.close();
     }
 
-    @Test
-    public void test() {
-        try {
-            // 创建一个临时文件并写入一些数据
-            File tempFile = File.createTempFile("tempfile", ".txt");
-            tempFile.deleteOnExit();
-            try (FileWriter writer = new FileWriter(tempFile)) {
-                writer.write("Hello, World!\n");
-                writer.write("This is a test file.");
-            }
-
-            // 打开文件并读取数据
-            RandomAccessFile randomAccessFile = new RandomAccessFile(tempFile, "r");
-            byte[] buffer = new byte[1024];
-            int bytesRead = randomAccessFile.read(buffer);
-            if (bytesRead != -1) {
-                System.out.println("Read " + bytesRead + " bytes from the file:");
-                System.out.println(new String(buffer, 0, bytesRead));
-            } else {
-                System.out.println("End of file reached.");
-            }
-
-            // 关闭文件
-            randomAccessFile.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+//    @Test
+//    public void test() {
+//        try {
+//            // 创建一个临时文件并写入一些数据
+//            File tempFile = File.createTempFile("tempfile", ".txt");
+//            tempFile.deleteOnExit();
+//            try (FileWriter writer = new FileWriter(tempFile)) {
+//                writer.write("Hello, World!\n");
+//                writer.write("This is a test file.");
+//            }
+//
+//            // 打开文件并读取数据
+//            RandomAccessFile randomAccessFile = new RandomAccessFile(tempFile, "r");
+//            byte[] buffer = new byte[1024];
+//            int bytesRead = randomAccessFile.read(buffer);
+//            if (bytesRead != -1) {
+//                System.out.println("Read " + bytesRead + " bytes from the file:");
+//                System.out.println(new String(buffer, 0, bytesRead));
+//            } else {
+//                System.out.println("End of file reached.");
+//            }
+//
+//            // 关闭文件
+//            randomAccessFile.close();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//    }
 
     /**
      * JUnit suite target

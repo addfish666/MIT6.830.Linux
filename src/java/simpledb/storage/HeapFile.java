@@ -100,25 +100,77 @@ public class HeapFile implements DbFile {
 ////        return null;
 //    }
 
-    public Page readPage(PageId pid) throws IllegalArgumentException {
-        if (!(pid instanceof HeapPageId))
-            throw new IllegalArgumentException("pid should be HeapPageId");
+    public Page readPage(PageId pid) {
+        // some code goes here
+        HeapPage heapPage = null;
+        int pageSize = BufferPool.getPageSize();
+        byte[] buf = new byte[pageSize];
 
-        int size = BufferPool.getPageSize();
-
-        try (RandomAccessFile f = new RandomAccessFile(this.file, "r")) {
-            f.seek((long) size * pid.getPageNumber());
-
-            byte[] data = new byte[size];
-            f.read(data, 0, size);
-
-            return new HeapPage((HeapPageId) pid, data);
-        }
-        catch (IOException e) {
+        try {
+            RandomAccessFile randomAccessFile = new RandomAccessFile(this.file, "r");
+            randomAccessFile.seek((long)pid.getPageNumber()*pageSize);
+            if(randomAccessFile.read(buf)==-1){
+                return null;
+            }
+            heapPage= new HeapPage((HeapPageId) pid, buf);
+            randomAccessFile.close();
+        } catch (FileNotFoundException e ) {
             e.printStackTrace();
-            return null;
+        } catch (IOException e){
+            e.printStackTrace();
         }
+        return heapPage;
     }
+
+//    public Page readPage(PageId pid) {
+//        // some code goes here
+//        int tableId = pid.getTableId();
+//        int pageNumber = pid.getPageNumber();
+//
+//        int pageSize = Database.getBufferPool().getPageSize();
+//        long offset = pageNumber * pageSize;
+//        byte[] data = new byte[pageSize];
+//        RandomAccessFile rfile = null;
+//        try {
+//            rfile = new RandomAccessFile(file, "r");
+//            rfile.seek(offset);
+////            rfile.read(data);
+//            System.out.println("ddata"+rfile.read(data));
+//            HeapPageId heapPageId = new HeapPageId(tableId, pageNumber);
+//            HeapPage heapPage = new HeapPage(heapPageId, data);
+//            return heapPage;
+//        } catch (FileNotFoundException e) {
+//            throw new IllegalArgumentException("HeapFile: readPage: file not found");
+//        } catch (IOException e) {
+//            throw new IllegalArgumentException(String.format("HeapFile: readPage: file with offset %d not found",offset));
+//        } finally {
+//            try {
+//                rfile.close();
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        }
+//    }
+
+//    public Page readPage(PageId pid) throws IllegalArgumentException {
+//        if (!(pid instanceof HeapPageId))
+//            throw new IllegalArgumentException("pid should be HeapPageId");
+//
+//        int size = BufferPool.getPageSize();
+//
+//        try (RandomAccessFile f = new RandomAccessFile(this.file, "r")) {
+//            f.seek((long) size * pid.getPageNumber());
+//
+//            byte[] data = new byte[size];
+//            f.read(data, 0, size);
+//
+//            return new HeapPage((HeapPageId) pid, data);
+//        }
+//        catch (IOException e) {
+//            e.printStackTrace();
+//            return null;
+//        }
+//    }
 
     // see DbFile.java for javadocs
     public void writePage(Page page) throws IOException {

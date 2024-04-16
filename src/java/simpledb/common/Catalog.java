@@ -22,7 +22,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * @Threadsafe
  */
 public class Catalog {
-    private List<Table> tables;
+//    private List<Table> tables;
+    private final ConcurrentHashMap<Integer, Table> id2table;// 表id与表的映射
+    private final ConcurrentHashMap<String, Table> name2table;// 表名字与表的映射
+
     public class Table {
         private DbFile file;
         private String name;// 名字
@@ -60,7 +63,7 @@ public class Catalog {
 
         @Override
         public String toString() {
-            return "Mytable{" +
+            return "MyTable{" +
                     "file=" + file +
                     ", name='" + name + '\'' +
                     ", pkeyField='" + pkeyField + '\'' +
@@ -74,7 +77,9 @@ public class Catalog {
      */
     public Catalog() {
         // some code goes here
-        this.tables = new ArrayList<>();
+//        this.tables = new ArrayList<>();
+        this.id2table = new ConcurrentHashMap<>();
+        this.name2table = new ConcurrentHashMap<>();
     }
 
     /**
@@ -86,18 +91,33 @@ public class Catalog {
      * conflict exists, use the last table to be added as the table for a given name.
      * @param pkeyField the name of the primary key field
      */
+    //向CataLog中添加表主键可为空、name可为空，name为空时随机一个UUID作为其name。
+//    public void addTable(DbFile file, String name, String pkeyField) {
+//        // some code goes here
+//        Table table = new Table(file, name, pkeyField);
+//        int id = file.getId();
+//        for(int i = 0; i < this.tables.size(); i++) {
+//            Table tmp = this.tables.get(i);
+//            if(tmp.getName() == null) continue;
+//            if(tmp.getName().equals(name) || tmp.getFile().getId() == id) {
+//                this.tables.set(i, table);
+//                id2name.put(name, id);
+//                return;
+//            }
+//        }
+//        catalog.put(id, table);
+//        id2name.put(name, id);
+//        this.tables.add(table);
+//    }
     public void addTable(DbFile file, String name, String pkeyField) {
         // some code goes here
-        Table table = new Table(file, name, pkeyField);
-        for(int i = 0; i < this.tables.size(); i++) {
-            Table tmp = this.tables.get(i);
-            if(tmp.getName() == null) continue;
-            if(tmp.getName().equals(name) || tmp.getFile().getId() == file.getId()) {
-                this.tables.set(i, table);
-                return;
-            }
+        if(name2table.containsKey(name)) {
+            id2table.remove(name2table.get(name).getFile().getId());
         }
-        this.tables.add(table);
+        Table table = new Table(file, name, pkeyField);
+        //当调用 put 方法时，如果指定的键已经存在，则会替换原有键对应的值。这意味着原有键对应的值会被新的值所替代
+        name2table.put(name, table);
+        id2table.put(file.getId(), table);
     }
 
     public void addTable(DbFile file, String name) {
@@ -121,15 +141,9 @@ public class Catalog {
      */
     public int getTableId(String name) throws NoSuchElementException {
         // some code goes here
-        if(name!=null){
-            for(int i=0;i<this.tables.size();i++){
-                if(this.tables.get(i).getName()==null){
-                    continue;
-                }
-                if(this.tables.get(i).getName().equals(name)){
-                    return this.tables.get(i).getFile().getId();
-                }
-            }
+        //ConcurrentHashMap 不允许将 null 作为键（key）
+        if(name != null && name2table.containsKey(name)) {
+            return name2table.get(name).getFile().getId();
         }
         throw new NoSuchElementException();
     }
@@ -139,16 +153,17 @@ public class Catalog {
      * @param tableId
      * @return
      */
-    public Table getTableById(int tableId){
-        for(int i=0;i<this.tables.size();i++) {
-            Table table = this.tables.get(i);
-            if(table.getFile().getId()==tableId){
-                return table;
-            }
-
-        }
-        return null;
-    }
+//    public Table getTableById(int tableId){
+////        for(int i=0;i<this.tables.size();i++) {
+////            Table table = this.tables.get(i);
+////            if(table.getFile().getId()==tableId){
+////                return table;
+////            }
+////
+////        }
+////        return null;
+//        return catalog.get(tableId);
+//    }
 
     /**
      * Returns the tuple descriptor (schema) of the specified table
@@ -158,8 +173,9 @@ public class Catalog {
      */
     public TupleDesc getTupleDesc(int tableid) throws NoSuchElementException {
         // some code goes here
-        Table table = getTableById(tableid);
-        if(table != null) return table.getFile().getTupleDesc();
+        if(id2table.containsKey(tableid)) {
+            return id2table.get(tableid).getFile().getTupleDesc();
+        }
         throw new NoSuchElementException();
     }
 
@@ -171,36 +187,29 @@ public class Catalog {
      */
     public DbFile getDatabaseFile(int tableid) throws NoSuchElementException {
         // some code goes here
-        Table table = this.getTableById(tableid);
-        if(table!=null){
-            return table.getFile();
+        if(id2table.containsKey(tableid)) {
+            return id2table.get(tableid).getFile();
         }
         return null;
     }
 
     public String getPrimaryKey(int tableid) {
         // some code goes here
-        Table table = this.getTableById(tableid);
-        if(table!=null){
-            return table.getPkeyField();
+        if(id2table.containsKey(tableid)) {
+            return id2table.get(tableid).getPkeyField();
         }
         return null;
     }
 
     public Iterator<Integer> tableIdIterator() {
         // some code goes here
-        List<Integer> res = new ArrayList<>();
-        for(int i=0;i<this.tables.size();i++){
-            res.add(this.tables.get(i).getFile().getId());
-        }
-        return res.iterator();
+        return id2table.keySet().iterator();
     }
 
     public String getTableName(int id) {
         // some code goes here
-        Table table = this.getTableById(id);
-        if(table!=null){
-            return table.getName();
+        if(id2table.containsKey(id)){
+            return id2table.get(id).getName();
         }
         throw new NoSuchElementException();
     }
@@ -208,7 +217,8 @@ public class Catalog {
     /** Delete all tables from the catalog */
     public void clear() {
         // some code goes here
-        this.tables.clear();
+        id2table.clear();
+        name2table.clear();
     }
     
     /**
