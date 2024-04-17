@@ -1,14 +1,30 @@
 package simpledb.execution;
 
 import simpledb.common.Type;
+import simpledb.storage.Field;
 import simpledb.storage.Tuple;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Knows how to compute some aggregate over a set of IntFields.
  */
 public class IntegerAggregator implements Aggregator {
+    /**
+     * SELECT product_id, SUM(quantity)
+     * FROM orders
+     * GROUP BY product_id;
+     * */
 
     private static final long serialVersionUID = 1L;
+    private int gbFieldIndex;// 分组字段的序号
+    private Type gbFieldType;// 分组字段的类型 (product_id)
+    private int aggFieldIndex;// 聚合字段的序号 (quantity)
+    private Op what;
+    private Map<Field, List<Field>> group;// groupField 到 aggField 的映射
 
     /**
      * Aggregate constructor
@@ -27,6 +43,11 @@ public class IntegerAggregator implements Aggregator {
 
     public IntegerAggregator(int gbfield, Type gbfieldtype, int afield, Op what) {
         // some code goes here
+        this.gbFieldIndex = gbfield;
+        this.gbFieldType = gbfieldtype;
+        this.aggFieldIndex = afield;
+        this.what = what;
+        this.group = new HashMap<>();
     }
 
     /**
@@ -38,6 +59,19 @@ public class IntegerAggregator implements Aggregator {
      */
     public void mergeTupleIntoGroup(Tuple tup) {
         // some code goes here
+        Field aggField = tup.getField(aggFieldIndex);
+        Field gbField = null;
+        //gbFieldIndex == -1 是 代表不进行分组
+        if(this.gbFieldIndex != -1) gbField = tup.getField(this.gbFieldIndex);
+        // HashMap允许key为null
+        if(this.group.containsKey(gbField)) {
+            group.get(gbField).add(aggField);
+        }
+        else {
+            List<Field> list = new ArrayList<>();
+            list.add(aggField);
+            group.put(gbField, list);
+        }
     }
 
     /**
@@ -50,8 +84,9 @@ public class IntegerAggregator implements Aggregator {
      */
     public OpIterator iterator() {
         // some code goes here
-        throw new
-        UnsupportedOperationException("please implement me for lab2");
+//        throw new
+//        UnsupportedOperationException("please implement me for lab2");
+        return new AggregateIter(group, gbFieldIndex, gbFieldType, what);
     }
 
 }

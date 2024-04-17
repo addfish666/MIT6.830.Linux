@@ -15,8 +15,8 @@ public class Join extends Operator {
 
     private static final long serialVersionUID = 1L;
     private JoinPredicate joinPredicate;
-    private OpIterator child1;
-    private OpIterator child2;
+    private OpIterator child1;// 用于连接的left tuples
+    private OpIterator child2;// 用于连接的right tuples
     private TupleDesc tupleDesc;
     private Iterator<Tuple> it;
     private final List<Tuple> childTuple = new ArrayList<>();

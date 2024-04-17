@@ -8,14 +8,15 @@ import java.io.Serializable;
 /**
  * Predicate compares tuples to a specified Field value.
  */
+//将tuple中的字段与指定的字段进行比较
 public class Predicate implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     //比较tuple某个字段的值与指定的值是否满足判断
-    private int field;// 某个字段
-    private Op op;
-    private Field operand;// 值
+    private int fieldNo;// tuple中与指定字段对应的字段的序号
+    private Op op;// 执行的比较逻辑，Field.compare()中的参数
+    private Field opField;// 指定的比较字段，Field.compare()中的参数
 
     /** Constants used for return codes in Field.compare */
     public enum Op implements Serializable {
@@ -64,9 +65,9 @@ public class Predicate implements Serializable {
      */
     public Predicate(int field, Op op, Field operand) {
         // some code goes here
-        this.field = field;
+        this.fieldNo = field;
         this.op  = op;
-        this.operand = operand;
+        this.opField = operand;
     }
 
     /**
@@ -75,7 +76,7 @@ public class Predicate implements Serializable {
     public int getField()
     {
         // some code goes here
-        return field;
+        return fieldNo;
     }
 
     /**
@@ -93,7 +94,7 @@ public class Predicate implements Serializable {
     public Field getOperand()
     {
         // some code goes here
-        return operand;
+        return opField;
     }
     
     /**
@@ -108,8 +109,8 @@ public class Predicate implements Serializable {
      */
     public boolean filter(Tuple t) {
         // some code goes here
-        Field field = t.getField(this.field);
-        return field.compare(this.op, this.operand);
+        Field field = t.getField(this.fieldNo);
+        return field.compare(this.op, this.opField);
     }
 
     /**
@@ -119,9 +120,9 @@ public class Predicate implements Serializable {
     public String toString() {
         // some code goes here
         return "Predicate{"+
-                "field="+this.field+
+                "field="+this.fieldNo+
                 "op="+this.op+
-                "operand="+this.operand+
+                "operand="+this.opField+
                 "}";
     }
 }

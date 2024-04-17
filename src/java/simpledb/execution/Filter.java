@@ -10,11 +10,15 @@ import java.util.*;
 /**
  * Filter is an operator that implements a relational select.
  */
+/**
+Filter实现了Operator接口。根据Predicate的判读结果，得到满足条件的tuples。
+实现了where age > 18这样的操作。
+* */
 public class Filter extends Operator {
 
     private static final long serialVersionUID = 1L;
-    private Predicate predicate;// 过滤的判断过程
-    private OpIterator child;// 要过滤的所有tuple
+    private Predicate predicate;// 对Predicate封装，通过predicate实现对每一个tuple的过滤操作
+    private OpIterator child;// 待过滤的tuples的迭代器
     private TupleDesc tupleDesc;
     private Iterator<Tuple> it;// 最终的所有过滤结果是保存到it
     private final List<Tuple> childTuple = new ArrayList<>();
@@ -39,6 +43,7 @@ public class Filter extends Operator {
         return this.predicate;
     }
 
+    //返回待过滤元组的属性
     public TupleDesc getTupleDesc() {
         // some code goes here
         return child.getTupleDesc();
