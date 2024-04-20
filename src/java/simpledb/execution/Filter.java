@@ -58,7 +58,7 @@ public class Filter extends Operator {
             if(predicate.filter(next)) childTuple.add(next);
         }
         it = childTuple.iterator();
-        super.open();// ??
+        super.open();
     }
 
     public void close() {

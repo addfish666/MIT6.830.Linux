@@ -75,31 +75,6 @@ public class HeapFile implements DbFile {
     }
 
     // see DbFile.java for javadocs
-//    public Page readPage(PageId pid) {
-//        // some code goes here
-//        HeapPage heapPage = null;
-//        int pageSize = BufferPool.getPageSize();
-//        byte[] buf = new byte[pageSize];
-//        try {
-//            // "随机" 的意思是可以在文件的任意位置进行读取和写入，并不是指按照某种随机的顺序读取文件的内容
-//            RandomAccessFile randomAccessFile = new RandomAccessFile(this.file, "r");
-//            randomAccessFile.seek((long)pid.getPageNumber()*pageSize);
-//            //如果 read 方法返回 -1，表示文件已经读取到末尾，此时返回 null
-//            if(randomAccessFile.read(buf)==-1){
-////                return null;
-//                return new HeapPage((HeapPageId) pid, Arrays.copyOf(buf, pageSize));
-//            }
-//            heapPage= new HeapPage((HeapPageId) pid, buf);
-//            randomAccessFile.close();
-//        } catch (FileNotFoundException e ) {
-//            e.printStackTrace();
-//        } catch (IOException e){
-//            e.printStackTrace();
-//        }
-//        return heapPage;
-////        return null;
-//    }
-
     public Page readPage(PageId pid) {
         // some code goes here
         HeapPage heapPage = null;
@@ -122,60 +97,18 @@ public class HeapFile implements DbFile {
         return heapPage;
     }
 
-//    public Page readPage(PageId pid) {
-//        // some code goes here
-//        int tableId = pid.getTableId();
-//        int pageNumber = pid.getPageNumber();
-//
-//        int pageSize = Database.getBufferPool().getPageSize();
-//        long offset = pageNumber * pageSize;
-//        byte[] data = new byte[pageSize];
-//        RandomAccessFile rfile = null;
-//        try {
-//            rfile = new RandomAccessFile(file, "r");
-//            rfile.seek(offset);
-////            rfile.read(data);
-//            System.out.println("ddata"+rfile.read(data));
-//            HeapPageId heapPageId = new HeapPageId(tableId, pageNumber);
-//            HeapPage heapPage = new HeapPage(heapPageId, data);
-//            return heapPage;
-//        } catch (FileNotFoundException e) {
-//            throw new IllegalArgumentException("HeapFile: readPage: file not found");
-//        } catch (IOException e) {
-//            throw new IllegalArgumentException(String.format("HeapFile: readPage: file with offset %d not found",offset));
-//        } finally {
-//            try {
-//                rfile.close();
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//    }
-
-//    public Page readPage(PageId pid) throws IllegalArgumentException {
-//        if (!(pid instanceof HeapPageId))
-//            throw new IllegalArgumentException("pid should be HeapPageId");
-//
-//        int size = BufferPool.getPageSize();
-//
-//        try (RandomAccessFile f = new RandomAccessFile(this.file, "r")) {
-//            f.seek((long) size * pid.getPageNumber());
-//
-//            byte[] data = new byte[size];
-//            f.read(data, 0, size);
-//
-//            return new HeapPage((HeapPageId) pid, data);
-//        }
-//        catch (IOException e) {
-//            e.printStackTrace();
-//            return null;
-//        }
-//    }
-
     // see DbFile.java for javadocs
     public void writePage(Page page) throws IOException {
         // some code goes here
         // not necessary for lab1
+        HeapPageId heapPageId = (HeapPageId) page.getId();
+        int size = BufferPool.getPageSize();
+        int pageNumber = heapPageId.getPageNumber();
+        byte[] pageData = page.getPageData();
+        RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw");
+        randomAccessFile.seek(pageNumber* size);
+        randomAccessFile.write(pageData);
+        randomAccessFile.close();
     }
 
     /**
@@ -187,10 +120,38 @@ public class HeapFile implements DbFile {
     }
 
     // see DbFile.java for javadocs
+    // 为什么返回值是List<Page>
     public List<Page> insertTuple(TransactionId tid, Tuple t)
             throws DbException, IOException, TransactionAbortedException {
         // some code goes here
-        return null;
+        if (!getFile().canRead() || !getFile().canWrite()) {
+            throw new IOException();
+        }
+        List<Page> res = new ArrayList<>();
+        for(int i=0;i<numPages();i++){
+            HeapPageId heapPageId = new HeapPageId(getId(),i);
+            HeapPage heapPage = (HeapPage) Database.getBufferPool().getPage(tid,heapPageId,Permissions.READ_ONLY);
+            if(heapPage==null){
+                Database.getBufferPool().unsafeReleasePage(tid,heapPageId);
+                continue;
+            }
+            if(heapPage.getNumEmptySlots()==0){
+                Database.getBufferPool().unsafeReleasePage(tid,heapPageId);
+                continue;
+            }
+            heapPage.insertTuple(t);
+            heapPage.markDirty(true,tid);
+            res.add(heapPage);
+            return res;
+        }
+        //新建一个page
+        //The page number in that table为什么是numPages()
+        HeapPageId heapPageId = new HeapPageId(getId(), numPages());
+        HeapPage heapPage = new HeapPage(heapPageId, HeapPage.createEmptyPageData());
+        heapPage.insertTuple(t);
+        writePage(heapPage);
+        res.add(heapPage);
+        return res;
         // not necessary for lab1
     }
 
@@ -198,7 +159,15 @@ public class HeapFile implements DbFile {
     public ArrayList<Page> deleteTuple(TransactionId tid, Tuple t) throws DbException,
             TransactionAbortedException {
         // some code goes here
-        return null;
+        ArrayList<Page> res = new ArrayList<>();
+        HeapPageId heapPageId  = (HeapPageId) t.getRecordId().getPageId();
+        HeapPage heapPage = (HeapPage) Database.getBufferPool().getPage(tid,heapPageId,Permissions.READ_WRITE);
+        if(heapPage==null){
+            throw  new DbException("null");
+        }
+        heapPage.deleteTuple(t);
+        res.add(heapPage);
+        return res;
         // not necessary for lab1
     }
 
