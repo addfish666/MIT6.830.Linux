@@ -6,7 +6,6 @@ import simpledb.common.DbException;
 import simpledb.common.DeadlockException;
 import simpledb.transaction.TransactionAbortedException;
 import simpledb.transaction.TransactionId;
-import sun.misc.LRUCache;
 
 import java.io.*;
 
@@ -39,8 +38,8 @@ public class BufferPool {
     public static final int DEFAULT_PAGES = 50;
 
     private int numPages;
-//    private LRUCache<PageId, Page> buffer;
-    private ConcurrentHashMap<PageId, Page> buffer;
+//    private ConcurrentHashMap<PageId, Page> buffer;
+    private LRUCache<PageId, Page> buffer;
 
     /**
      * Creates a BufferPool that caches up to numPages pages.
@@ -50,8 +49,8 @@ public class BufferPool {
     public BufferPool(int numPages) {
         // some code goes here
         this.numPages = numPages;
-//        this.buffer = new LRUCache<>(numPages);
-        this.buffer = new ConcurrentHashMap<>();
+//        this.buffer = new ConcurrentHashMap<>();
+        this.buffer = new LRUCache<>(numPages);
     }
 
     public static int getPageSize() {
@@ -84,31 +83,34 @@ public class BufferPool {
      * @param perm the requested permissions on the page
      */
 //    public Page getPage(TransactionId tid, PageId pid, Permissions perm)
-//        throws TransactionAbortedException, DbException {
+//            throws TransactionAbortedException, DbException {
 //        // some code goes here
-//        if(!this.buffer.containsKey(pid.hashCode())) {
-//            DbFile dbFile = Database.getCatalog().getDatabaseFile(pid.getTableId());
-//            Page page = dbFile.readPage(pid);
-//            if(buffer.size() > numPages) evictPage();
-//            buffer.put(pid.hashCode(), page);
+//        if(!this.buffer.containsKey(pid)) {
+//            if(numPages > buffer.size()) {
+//                DbFile dbFile = Database.getCatalog().getDatabaseFile(pid.getTableId());
+//                Page page = dbFile.readPage(pid);
+//                if(page != null) {
+//                    buffer.put(pid, page);
+//                }
+//                else return null;
+//            }
+//            else {
+//                throw new DbException("bufferPool is full");
+//            }
 //        }
-//        return this.buffer.get(pid.hashCode());
+//        return this.buffer.get(pid);
 //    }
+
     public Page getPage(TransactionId tid, PageId pid, Permissions perm)
             throws TransactionAbortedException, DbException {
         // some code goes here
-        if(!this.buffer.containsKey(pid)) {
-            if(numPages > buffer.size()) {
-                DbFile dbFile = Database.getCatalog().getDatabaseFile(pid.getTableId());
-                Page page = dbFile.readPage(pid);
-                if(page != null) {
-                    buffer.put(pid, page);
-                }
-                else return null;
-            }
-            else {
-                throw new DbException("bufferPool is full");
-            }
+        if(this.buffer.get(pid) == null) {
+            DbFile dbFile = Database.getCatalog().getDatabaseFile(pid.getTableId());
+            Page page = dbFile.readPage(pid);
+            // page == null ?
+            if(buffer.getSize() >= numPages) evictPage();
+            buffer.put(pid, page);
+            return page;
         }
         return this.buffer.get(pid);
     }
@@ -216,7 +218,22 @@ public class BufferPool {
     public synchronized void flushAllPages() throws IOException {
         // some code goes here
         // not necessary for lab1
-
+        LRUCache<PageId, Page>.DLinkedNode head = buffer.getHead();
+        LRUCache<PageId, Page>.DLinkedNode tail = buffer.getTail();
+        while (head != tail) {
+            Page page = head.value;
+            if(page != null && page.isDirty() != null) {
+                DbFile dbFile = Database.getCatalog().getDatabaseFile(page.getId().getTableId());
+                try {
+                    page.markDirty(false,null);
+                    dbFile.writePage(page);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+//            flushPage(page.getId());
+            head = head.next;
+        }
     }
 
     /** Remove the specific page id from the buffer pool.
@@ -230,15 +247,35 @@ public class BufferPool {
     public synchronized void discardPage(PageId pid) {
         // some code goes here
         // not necessary for lab1
+        LRUCache<PageId, Page>.DLinkedNode head = buffer.getHead();
+        LRUCache<PageId, Page>.DLinkedNode tail = buffer.getTail();
+        while(head!=tail){
+            PageId key = head.key;
+            if(key!=null && key.equals(pid)){
+                buffer.remove(head);
+                return;
+            }
+            head = head.next;
+        }
     }
 
     /**
      * Flushes a certain page to disk
      * @param pid an ID indicating the page to flush
      */
-    private synchronized  void flushPage(PageId pid) throws IOException {
+    private synchronized void flushPage(PageId pid) throws IOException {
         // some code goes here
         // not necessary for lab1
+        Page page = buffer.get(pid);
+        if(page != null && page.isDirty() != null) {
+            DbFile dbFile = Database.getCatalog().getDatabaseFile(pid.getTableId());
+            try {
+                page.markDirty(false, null);
+                dbFile.writePage(page);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     /** Write all pages of the specified transaction to disk.
@@ -252,9 +289,38 @@ public class BufferPool {
      * Discards a page from the buffer pool.
      * Flushes the page to disk to ensure dirty pages are updated on disk.
      */
-    private synchronized  void evictPage() throws DbException {
+    private synchronized void evictPage() throws DbException {
         // some code goes here
         // not necessary for lab1
+        Page page = buffer.getTail().prev.value;
+        if(page != null && page.isDirty() != null) {
+            //将脏页写入磁盘
+            try {
+                flushPage(page.getId());
+            }catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            //不是脏页没改过，不需要写磁盘
+            discardPage(page.getId());
+        }
+    }
+
+    // 从LRU链表中从后往前找到第一个非脏页并移除
+    private void findNotDirty() throws DbException {
+        LRUCache<PageId, Page>.DLinkedNode head = buffer.getHead();
+        LRUCache<PageId, Page>.DLinkedNode tail = buffer.getTail();
+        tail = tail.prev;
+        while (head != tail) {
+            Page value = tail.value;
+            if (value != null && value.isDirty() == null) {
+                buffer.remove(tail);
+                return;
+            }
+            tail = tail.prev;
+        }
+        //没有非脏页，抛出异常
+        throw new DbException("no dirty page");
     }
 
 }

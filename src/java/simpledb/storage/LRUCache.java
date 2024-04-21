@@ -70,6 +70,7 @@ public class LRUCache<K, V> {
      * @param key
      * @param value
      */
+    // value may be null
     public synchronized void put(K key, V value) {
         DLinkedNode node = this.cache.get(key);
         if(node != null) {

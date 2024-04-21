@@ -121,6 +121,7 @@ public class HeapFile implements DbFile {
 
     // see DbFile.java for javadocs
     // 为什么返回值是List<Page>
+    // 以B+数作为底层数据结构时，插入一条记录可能需要修改多个Page
     public List<Page> insertTuple(TransactionId tid, Tuple t)
             throws DbException, IOException, TransactionAbortedException {
         // some code goes here
@@ -180,7 +181,7 @@ public class HeapFile implements DbFile {
     /**
      * 这个迭代器的作用是用来遍历所有的tuple，但是不要将所有tuple一次性放入内存，而是一页一页的读和遍历
      */
-    public class  HeapFileIterator implements DbFileIterator {
+    public class HeapFileIterator implements DbFileIterator {
         TransactionId tid;
         Permissions permissions;
         BufferPool bufferPool = Database.getBufferPool();
