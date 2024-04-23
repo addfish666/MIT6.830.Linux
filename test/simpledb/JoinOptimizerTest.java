@@ -152,6 +152,13 @@ public class JoinOptimizerTest extends SimpleDbTestBase {
         equalsJoinNode = new LogicalJoinNode(tableName2, tableName2,
                 Integer.toString(8), Integer.toString(7), Predicate.Op.EQUALS);
         checkJoinEstimateCosts(jo, equalsJoinNode);
+
+        List<Integer> list = Arrays.asList(1, 2, 3, 4, 5);
+        int size = 1;
+        Set<Set<Integer>> subsets = jo.enumerateSubsets(list, size);
+        for (Set<Integer> subset : subsets) {
+            System.out.println(subset);
+        }
     }
 
     private void checkJoinEstimateCosts(JoinOptimizer jo,

@@ -130,7 +130,11 @@ public class JoinOptimizer {
             // HINT: You may need to use the variable "j" if you implemented
             // a join algorithm that's more complicated than a basic
             // nested-loops join.
-            return -1.0;
+            /**
+             * joincost(t1 join t2) = scancost(t1) + ntups(t1) x scancost(t2) //IO cost
+             *                        + ntups(t1) x ntups(t2)  //CPU cost
+             * */
+            return cost1 + card1 * cost2 + card1 * card2;
         }
     }
 
@@ -174,9 +178,32 @@ public class JoinOptimizer {
                                                    String field2PureName, int card1, int card2, boolean t1pkey,
                                                    boolean t2pkey, Map<String, TableStats> stats,
                                                    Map<String, Integer> tableAliasToId) {
-        int card = 1;
+//        int card = 1;
         // some code goes here
-        return card <= 0 ? 1 : card;
+        if(joinOp.equals(Predicate.Op.EQUALS)){
+            if(!t1pkey&&!t2pkey){
+                return Math.max(card1,card2);
+            }else if(!t2pkey){
+                return card2;
+            }else if(!t1pkey){
+                return card1;
+            }else{
+                return Math.min(card1,card2);
+            }
+        }else if(joinOp.equals(Predicate.Op.NOT_EQUALS)){
+            if(!t1pkey && !t2pkey){
+                return card1 * card2 - Math.max(card1,card2);
+            }else if (!t2pkey){
+                return card2*card1 - card2;
+            }else if(!t1pkey){
+                return card1*card2 - card1;
+            }else{
+                return card1*card2 - Math.min(card1,card2);
+            }
+        }
+        //如果不是=或!=，是很难估计基数的
+        //输出的数量应该与输入的数量是成比例的，可以预估一个固定的分数代表range scans产生的向量叉积，比如30%
+        return (int)(0.3 * card1 * card2);
     }
 
     /**
@@ -238,6 +265,34 @@ public class JoinOptimizer {
 
         // some code goes here
         //Replace the following
+        CostCard bestCostCard = new CostCard();
+        PlanCache planCache = new PlanCache();
+        // 思路：通过辅助方法computeCostAndCardOfSubplan获取每个size下最优的连接顺序，不断加入planCache中
+        for (int i = 1; i <= joins.size(); i++) {
+            Set<Set<LogicalJoinNode>> subsets = enumerateSubsets(joins, i);
+            for (Set<LogicalJoinNode> set : subsets) {
+                double bestCostSoFar = Double.MAX_VALUE;
+                bestCostCard = new CostCard();
+                for (LogicalJoinNode logicalJoinNode : set) {
+                    //根据子计划找出最优的方案
+                    CostCard costCard = computeCostAndCardOfSubplan(stats, filterSelectivities, logicalJoinNode, set, bestCostSoFar, planCache);
+                    if (costCard == null) continue;
+                    bestCostSoFar = costCard.cost;
+                    bestCostCard = costCard;
+                }
+                if (bestCostSoFar != Double.MAX_VALUE) {
+                    planCache.addPlan(set, bestCostCard.cost, bestCostCard.card, bestCostCard.plan);
+                }
+            }
+        }
+        if (explain){
+            printJoins(bestCostCard.plan, planCache, stats, filterSelectivities);
+        }
+
+        // 如果joins传进来的长度为0，则计划就为空
+        if(bestCostCard.plan != null){
+            return bestCostCard.plan;
+        }
         return joins;
     }
 

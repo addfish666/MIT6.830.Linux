@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentMap;
  * This class is not needed in implementing lab1 and lab2.
  */
 public class TableStats {
-
+    // tablename到tableStats的映射
     private static final ConcurrentMap<String, TableStats> statsMap = new ConcurrentHashMap<>();
 
     static final int IOCOSTPERPAGE = 1000;
@@ -49,7 +49,7 @@ public class TableStats {
     public static Map<String, TableStats> getStatsMap() {
         return statsMap;
     }
-
+    // 计算每一个tablename的tableStats
     public static void computeStatistics() {
         Iterator<Integer> tableIt = Database.getCatalog().tableIdIterator();
 
@@ -70,9 +70,9 @@ public class TableStats {
     static final int NUM_HIST_BINS = 100;
 
     private int ioCostPerPage;
-    private ConcurrentHashMap<Integer, IntHistogram> intHistograms;
+    private ConcurrentHashMap<Integer, IntHistogram> intHistograms;// 字段编号到IntHistogram的映射
     private ConcurrentHashMap<Integer, StringHistogram> strHistograms;
-    private  HeapFile dbFile;
+    private  HeapFile dbFile;// 需要为每一个字段制作IntHistogram的表
     private TupleDesc td;
     /**
      * 传入表的总记录数，用于估算estimateTableCardinality
@@ -115,9 +115,12 @@ public class TableStats {
                 this.totalTuples++;
                 Tuple tuple = child.next();
                 for(int i = 0; i < td.numFields(); i++) {
+                    //Int类型，需要先统计各个属性的最大最小值
                     if(td.getFieldType(i).equals(Type.INT_TYPE)) {
                         IntField field = (IntField) tuple.getField(i);
+                        //最小值
                         minMap.put(i, Math.min(minMap.getOrDefault(i, Integer.MAX_VALUE), field.getValue()));
+                        //最大值
                         maxMap.put(i, Math.max(minMap.getOrDefault(i, Integer.MIN_VALUE), field.getValue()));
                     } else if(td.getFieldType(i).equals(Type.STRING_TYPE)){
                         StringHistogram histogram = this.strHistograms.getOrDefault(i, new StringHistogram(NUM_HIST_BINS));

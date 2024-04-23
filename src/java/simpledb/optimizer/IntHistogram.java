@@ -244,7 +244,10 @@ public class IntHistogram {
         this.buckets = new int[buckets];
         this.min = min;
         this.max = max;
-        // max - min + 1.0 ??
+        /**
+         * max - min + 1.0 ??
+        * 每一个bucket的区间是左闭右开，如果将field的取值范围按bucket的数量进行划分的化，
+        * 最后一个bucket是无法包含field的最大取值的*/
         this.width = Math.max(1,(max - min + 1.0) / buckets);
         this.ntups = 0;
     }
