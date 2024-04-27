@@ -172,6 +172,7 @@ public class BufferPool {
     public void transactionComplete(TransactionId tid) {
         // some code goes here
         // not necessary for lab1|lab2
+        transactionComplete(tid, true);
     }
 
     /** Return true if the specified transaction has a lock on the specified page */
@@ -191,6 +192,39 @@ public class BufferPool {
     public void transactionComplete(TransactionId tid, boolean commit) {
         // some code goes here
         // not necessary for lab1|lab2
+        if(commit) {
+            // 在事务提交时，您应该强制将脏页写入磁盘（例如，将页写出）（这是 FORCE）
+            try{
+                flushPages(tid);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            rollback(tid);
+        }
+        lockManager.releaseAllLock(tid);
+    }
+
+    private synchronized void rollback(TransactionId tid) {
+        LRUCache<PageId, Page>.DLinkedNode head = buffer.getHead();
+        LRUCache<PageId, Page>.DLinkedNode tail = buffer.getTail();
+        while(head != tail) {
+            Page page = head.value;
+            LRUCache<PageId, Page>.DLinkedNode next = head.next;
+            if(page != null && page.isDirty() != null && page.isDirty().equals(tid)) {
+                buffer.remove(head);
+                try {
+                    Page page1 = Database.getBufferPool().getPage(tid, page.getId(), Permissions.READ_ONLY);
+                    page1.markDirty(false, null);
+                } catch (TransactionAbortedException e) {
+                    e.printStackTrace();
+                } catch (DbException e) {
+                    e.printStackTrace();
+                }
+
+            }
+            head = next;
+        }
     }
 
     /**
@@ -217,6 +251,7 @@ public class BufferPool {
         List<Page> pages = dbFile.insertTuple(tid, t);
         for(Page page : pages){
             page.markDirty(true,tid);
+            // put方法中当脏页被移除时没有触发刷盘
             buffer.put(page.getId(),page);
         }
     }
@@ -234,7 +269,7 @@ public class BufferPool {
      * @param tid the transaction deleting the tuple.
      * @param t the tuple to delete
      */
-    public  void deleteTuple(TransactionId tid, Tuple t)
+    public void deleteTuple(TransactionId tid, Tuple t)
         throws DbException, IOException, TransactionAbortedException {
         // some code goes here
         // not necessary for lab1
@@ -302,7 +337,7 @@ public class BufferPool {
         // some code goes here
         // not necessary for lab1
         Page page = buffer.get(pid);
-        if(page != null && page.isDirty() != null) {
+        if(page.isDirty() != null) {
             DbFile dbFile = Database.getCatalog().getDatabaseFile(pid.getTableId());
             try {
                 page.markDirty(false, null);
@@ -315,9 +350,24 @@ public class BufferPool {
 
     /** Write all pages of the specified transaction to disk.
      */
-    public synchronized  void flushPages(TransactionId tid) throws IOException {
+    public synchronized void flushPages(TransactionId tid) throws IOException {
         // some code goes here
         // not necessary for lab1|lab2
+        LRUCache<PageId, Page>.DLinkedNode head = buffer.getHead();
+        LRUCache<PageId, Page>.DLinkedNode tail = buffer.getTail();
+        while(head != tail) {
+            Page page = head.value;
+            if(page != null && page.isDirty() != null && page.isDirty().equals(tid)) {
+                DbFile dbFile = Database.getCatalog().getDatabaseFile(page.getId().getTableId());
+                try {
+                    page.markDirty(false, null);
+                    dbFile.writePage(page);
+                    page.setBeforeImage();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
     /**
@@ -335,9 +385,12 @@ public class BufferPool {
             }catch (IOException e) {
                 e.printStackTrace();
             }
+            // lab4 ex3 需要选取一个非脏页进行置换
+            findNotDirty();
         } else {
             //不是脏页没改过，不需要写磁盘
-            discardPage(page.getId());
+//            discardPage(page.getId());
+            buffer.discard();
         }
     }
 

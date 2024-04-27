@@ -294,6 +294,7 @@ public class HeapPage implements Page {
             if(tuples[i] != null) continue;
             if(!isSlotUsed(i)) {
                 tuples[i] = t;
+                // 设置tuple在Page中的物理记录
                 tuples[i].setRecordId(new RecordId(pid, i));
                 markSlotUsed(i, true);
                 return;
