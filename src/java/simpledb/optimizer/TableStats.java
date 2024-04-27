@@ -177,8 +177,8 @@ public class TableStats {
      */
     public double estimateScanCost() {
         // some code goes here
-        // 文件所需的页数 * IO单次花费 * 遍历的轮次
-        return dbFile.numPages() * ioCostPerPage * 2;
+        // 文件所需的页数 * IO单次花费
+        return dbFile.numPages() * ioCostPerPage;
     }
 
     /**

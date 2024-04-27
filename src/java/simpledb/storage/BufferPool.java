@@ -4,6 +4,7 @@ import simpledb.common.Database;
 import simpledb.common.Permissions;
 import simpledb.common.DbException;
 import simpledb.common.DeadlockException;
+import simpledb.transaction.LockManager;
 import simpledb.transaction.TransactionAbortedException;
 import simpledb.transaction.TransactionId;
 
@@ -12,6 +13,7 @@ import java.io.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -40,6 +42,7 @@ public class BufferPool {
     private int numPages;
 //    private ConcurrentHashMap<PageId, Page> buffer;
     private LRUCache<PageId, Page> buffer;
+    LockManager lockManager;
 
     /**
      * Creates a BufferPool that caches up to numPages pages.
@@ -51,6 +54,7 @@ public class BufferPool {
         this.numPages = numPages;
 //        this.buffer = new ConcurrentHashMap<>();
         this.buffer = new LRUCache<>(numPages);
+        this.lockManager = new LockManager();
     }
 
     public static int getPageSize() {
@@ -82,6 +86,7 @@ public class BufferPool {
      * @param pid the ID of the requested page
      * @param perm the requested permissions on the page
      */
+    // 未实现页面淘汰策略的getPage
 //    public Page getPage(TransactionId tid, PageId pid, Permissions perm)
 //            throws TransactionAbortedException, DbException {
 //        // some code goes here
@@ -101,13 +106,42 @@ public class BufferPool {
 //        return this.buffer.get(pid);
 //    }
 
+    // 实现页面淘汰策略的getPage
+//    public Page getPage(TransactionId tid, PageId pid, Permissions perm)
+//            throws TransactionAbortedException, DbException {
+//        // some code goes here
+//        if(this.buffer.get(pid) == null) {
+//            DbFile dbFile = Database.getCatalog().getDatabaseFile(pid.getTableId());
+//            Page page = dbFile.readPage(pid);
+//            // page == null ?
+//            if(page == null) throw new DbException("page null");
+//            if(buffer.getSize() >= numPages) evictPage();
+//            buffer.put(pid, page);
+//            return page;
+//        }
+//        return this.buffer.get(pid);
+//    }
+
+    // 实现页面淘汰策略 + 页级的锁管理器 的getPage
     public Page getPage(TransactionId tid, PageId pid, Permissions perm)
             throws TransactionAbortedException, DbException {
         // some code goes here
+        //先获取锁
+        boolean lockAcquired = false;
+        long start = System.currentTimeMillis();
+        long timeout = new Random().nextInt(2000);
+        while(!lockAcquired){
+            long now = System.currentTimeMillis();
+            if(now - start> timeout){
+                throw new TransactionAbortedException();
+            }
+            lockAcquired = lockManager.acquireLock(tid,pid,perm);
+        }
+
         if(this.buffer.get(pid) == null) {
             DbFile dbFile = Database.getCatalog().getDatabaseFile(pid.getTableId());
             Page page = dbFile.readPage(pid);
-            // page == null ?
+            if(page == null) throw new DbException("page null");
             if(buffer.getSize() >= numPages) evictPage();
             buffer.put(pid, page);
             return page;
@@ -127,6 +161,7 @@ public class BufferPool {
     public  void unsafeReleasePage(TransactionId tid, PageId pid) {
         // some code goes here
         // not necessary for lab1|lab2
+        lockManager.releaseLock(tid, pid);
     }
 
     /**
@@ -143,7 +178,7 @@ public class BufferPool {
     public boolean holdsLock(TransactionId tid, PageId p) {
         // some code goes here
         // not necessary for lab1|lab2
-        return false;
+        return lockManager.holdsLock(tid, p);
     }
 
     /**

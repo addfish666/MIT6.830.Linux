@@ -133,8 +133,9 @@ public class HeapFile implements DbFile {
             HeapPageId heapPageId = new HeapPageId(getId(),i);
             HeapPage heapPage = (HeapPage) Database.getBufferPool().getPage(tid,heapPageId,Permissions.READ_ONLY);
             if(heapPage==null){
-                Database.getBufferPool().unsafeReleasePage(tid,heapPageId);
-                continue;
+                throw  new DbException("null");
+//                Database.getBufferPool().unsafeReleasePage(tid,heapPageId);
+//                continue;
             }
             if(heapPage.getNumEmptySlots()==0){
                 Database.getBufferPool().unsafeReleasePage(tid,heapPageId);
@@ -163,8 +164,8 @@ public class HeapFile implements DbFile {
         ArrayList<Page> res = new ArrayList<>();
         HeapPageId heapPageId  = (HeapPageId) t.getRecordId().getPageId();
         HeapPage heapPage = (HeapPage) Database.getBufferPool().getPage(tid,heapPageId,Permissions.READ_WRITE);
-        if(heapPage==null){
-            throw  new DbException("null");
+        if(heapPage == null){
+            throw new DbException("null");
         }
         heapPage.deleteTuple(t);
         res.add(heapPage);
@@ -222,7 +223,8 @@ public class HeapFile implements DbFile {
                 if(num >= numPages()) return false;
                 HeapPageId heapPageId = new HeapPageId(getId(), num);
                 HeapPage page = (HeapPage)bufferPool.getPage(tid,heapPageId,permissions);
-                if(page == null) continue;
+//                if(page == null) continue;
+                if(page == null) throw new DbException("page null");
                 iterator = page.iterator();
                 if(iterator.hasNext()) return true;
             }

@@ -78,7 +78,7 @@ public class QueryTest {
 		// So, don't bother for now; future TODO.
 		// Regardless, each of the following should be optimized to run quickly,
 		// even though the worst case takes a very long time.
-		p.processNextStatement("SELECT * FROM emp,dept,hobbies,hobby WHERE hobbies.c0 = emp.c2 AND emp.c1 = dept.c0 AND hobbies.c1 = hobby.c0 AND emp.c3 < 1000;");
+		p.processNextStatement("SELECT * FROM emp,dept,hobbies,hobby WHERE emp.c1 = dept.c0 AND hobbies.c0 = emp.c2 AND hobbies.c1 = hobby.c0 AND emp.c3 < 1000;");
 	}
 	
 	/*

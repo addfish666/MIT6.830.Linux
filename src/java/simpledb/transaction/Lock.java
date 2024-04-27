@@ -2,6 +2,7 @@ package simpledb.transaction;
 
 import simpledb.common.Permissions;
 
+// 定义一个锁
 public class Lock {
     private TransactionId transactionId;
     private Permissions permissions;

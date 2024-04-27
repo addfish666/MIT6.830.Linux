@@ -119,6 +119,7 @@ public class JoinOptimizer {
      * @return An estimate of the cost of this query, in terms of cost1 and
      *         cost2
      */
+    // 这里的参数是如何被计算然后传进来的
     public double estimateJoinCost(LogicalJoinNode j, int card1, int card2,
             double cost1, double cost2) {
         if (j instanceof LogicalSubplanJoinNode) {
@@ -216,26 +217,46 @@ public class JoinOptimizer {
      *            The size of the subsets of interest
      * @return a set of all subsets of the specified size
      */
+    // 该方法低效，需要改进
+//    public <T> Set<Set<T>> enumerateSubsets(List<T> v, int size) {
+//        Set<Set<T>> els = new HashSet<>();
+//        els.add(new HashSet<>());
+//        // Iterator<Set> it;
+//        // long start = System.currentTimeMillis();
+//
+//        for (int i = 0; i < size; i++) {
+//            Set<Set<T>> newels = new HashSet<>();
+//            for (Set<T> s : els) {
+//                for (T t : v) {
+//                    Set<T> news = new HashSet<>(s);
+//                    if (news.add(t))
+//                        newels.add(news);
+//                }
+//            }
+//            els = newels;
+//        }
+//
+//        return els;
+//
+//    }
+
     public <T> Set<Set<T>> enumerateSubsets(List<T> v, int size) {
         Set<Set<T>> els = new HashSet<>();
-        els.add(new HashSet<>());
-        // Iterator<Set> it;
-        // long start = System.currentTimeMillis();
-
-        for (int i = 0; i < size; i++) {
-            Set<Set<T>> newels = new HashSet<>();
-            for (Set<T> s : els) {
-                for (T t : v) {
-                    Set<T> news = new HashSet<>(s);
-                    if (news.add(t))
-                        newels.add(news);
-                }
-            }
-            els = newels;
-        }
-
+        Set<T> path = new HashSet<>();
+        dfs(els, path, v, size, 0);
         return els;
+    }
 
+    private <T> void dfs(Set<Set<T>> els, Set<T> path, List<T> v, int size, int startIndex) {
+        if(path.size() == size) {
+            els.add(new HashSet<>(path));
+            return;
+        }
+        for(int i = startIndex; i <= v.size() - (size - path.size()); i++) {
+            path.add(v.get(i));
+            dfs(els, path, v, size, i + 1);
+            path.remove(v.get(i));
+        }
     }
 
     /**
@@ -258,6 +279,7 @@ public class JoinOptimizer {
      *             when stats or filter selectivities is missing a table in the
      *             join, or or when another internal error occurs
      */
+    // @param filterSelectivities这个参数如何理解，Selectivities of the filter predicates on each table如何使用
     public List<LogicalJoinNode> orderJoins(
             Map<String, TableStats> stats,
             Map<String, Double> filterSelectivities, boolean explain)
@@ -269,20 +291,22 @@ public class JoinOptimizer {
         PlanCache planCache = new PlanCache();
         // 思路：通过辅助方法computeCostAndCardOfSubplan获取每个size下最优的连接顺序，不断加入planCache中
         for (int i = 1; i <= joins.size(); i++) {
+            //得到固定长度i的子集，并遍历每一个子集
             Set<Set<LogicalJoinNode>> subsets = enumerateSubsets(joins, i);
             for (Set<LogicalJoinNode> set : subsets) {
+                //遍历集合中的集合，得到集合中的每个集合的最小
                 double bestCostSoFar = Double.MAX_VALUE;
                 bestCostCard = new CostCard();
                 for (LogicalJoinNode logicalJoinNode : set) {
-                    //根据子计划找出最优的方案
+                    //计算 logicalJoinNode 与 其他node(s中的其它node)的join 结果
                     CostCard costCard = computeCostAndCardOfSubplan(stats, filterSelectivities, logicalJoinNode, set, bestCostSoFar, planCache);
                     if (costCard == null) continue;
-                    bestCostSoFar = costCard.cost;
-                    bestCostCard = costCard;
+                    if(costCard.cost<bestCostSoFar){
+                        bestCostSoFar = costCard.cost;
+                        bestCostCard = costCard;
+                    }
                 }
-                if (bestCostSoFar != Double.MAX_VALUE) {
-                    planCache.addPlan(set, bestCostCard.cost, bestCostCard.card, bestCostCard.plan);
-                }
+                planCache.addPlan(set, bestCostCard.cost, bestCostCard.card, bestCostCard.plan);
             }
         }
         if (explain){

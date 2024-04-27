@@ -130,6 +130,9 @@ public class JoinOptimizerTest extends SimpleDbTestBase {
         LogicalJoinNode equalsJoinNode = new LogicalJoinNode(tableName1,
                 tableName2, Integer.toString(1), Integer.toString(2),
                 Predicate.Op.EQUALS);
+        System.out.println("------------------------");
+        equalsJoinNode.toString();
+        System.out.println("------------------------");
         checkJoinEstimateCosts(jo, equalsJoinNode);
         // 2 join 1
         jo = new JoinOptimizer(p.generateLogicalPlan(tid, "SELECT * FROM "
@@ -154,7 +157,7 @@ public class JoinOptimizerTest extends SimpleDbTestBase {
         checkJoinEstimateCosts(jo, equalsJoinNode);
 
         List<Integer> list = Arrays.asList(1, 2, 3, 4, 5);
-        int size = 1;
+        int size = 5;
         Set<Set<Integer>> subsets = jo.enumerateSubsets(list, size);
         for (Set<Integer> subset : subsets) {
             System.out.println(subset);
