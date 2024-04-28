@@ -133,6 +133,7 @@ public class BufferPool {
         while(!lockAcquired){
             long now = System.currentTimeMillis();
             if(now - start> timeout){
+                // 获取锁超时抛出异常之前是否需要释放该事务已经有用的锁
                 throw new TransactionAbortedException();
             }
             lockAcquired = lockManager.acquireLock(tid,pid,perm);
@@ -295,7 +296,7 @@ public class BufferPool {
             if(page != null && page.isDirty() != null) {
                 DbFile dbFile = Database.getCatalog().getDatabaseFile(page.getId().getTableId());
                 try {
-                    page.markDirty(false,null);
+//                    page.markDirty(false,null);
                     dbFile.writePage(page);
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -367,6 +368,7 @@ public class BufferPool {
                     e.printStackTrace();
                 }
             }
+            head = head.next;
         }
     }
 
@@ -380,11 +382,11 @@ public class BufferPool {
         Page page = buffer.getTail().prev.value;
         if(page != null && page.isDirty() != null) {
             //将脏页写入磁盘
-            try {
-                flushPage(page.getId());
-            }catch (IOException e) {
-                e.printStackTrace();
-            }
+//            try {
+//                flushPage(page.getId());
+//            }catch (IOException e) {
+//                e.printStackTrace();
+//            }
             // lab4 ex3 需要选取一个非脏页进行置换
             findNotDirty();
         } else {

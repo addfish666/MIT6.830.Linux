@@ -131,7 +131,7 @@ public class HeapFile implements DbFile {
         List<Page> res = new ArrayList<>();
         for(int i=0;i<numPages();i++){
             HeapPageId heapPageId = new HeapPageId(getId(),i);
-            HeapPage heapPage = (HeapPage) Database.getBufferPool().getPage(tid,heapPageId,Permissions.READ_ONLY);
+            HeapPage heapPage = (HeapPage) Database.getBufferPool().getPage(tid,heapPageId,Permissions.READ_WRITE);
             if(heapPage==null){
                 throw  new DbException("null");
 //                Database.getBufferPool().unsafeReleasePage(tid,heapPageId);
@@ -148,11 +148,19 @@ public class HeapFile implements DbFile {
         }
         //新建一个page
         //The page number in that table为什么是numPages()
+//        HeapPageId heapPageId = new HeapPageId(getId(), numPages());
+//        HeapPage heapPage = new HeapPage(heapPageId, HeapPage.createEmptyPageData());
+//        heapPage.insertTuple(t);
+//        writePage(heapPage);
+//        res.add(heapPage);
+//        return res;
         HeapPageId heapPageId = new HeapPageId(getId(), numPages());
         HeapPage heapPage = new HeapPage(heapPageId, HeapPage.createEmptyPageData());
-        heapPage.insertTuple(t);
         writePage(heapPage);
-        res.add(heapPage);
+        HeapPage page = (HeapPage) Database.getBufferPool().getPage(tid,heapPageId,Permissions.READ_WRITE);
+        page.insertTuple(t);
+        page.markDirty(true, tid);
+        res.add(page);
         return res;
         // not necessary for lab1
     }
