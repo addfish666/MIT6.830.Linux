@@ -130,6 +130,7 @@ public class BufferPool {
         boolean lockAcquired = false;
         long start = System.currentTimeMillis();
         long timeout = new Random().nextInt(2000);
+//        long timeout = 1000;
         while(!lockAcquired){
             long now = System.currentTimeMillis();
             if(now - start> timeout){

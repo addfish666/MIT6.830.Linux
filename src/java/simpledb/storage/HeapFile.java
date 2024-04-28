@@ -130,21 +130,40 @@ public class HeapFile implements DbFile {
         }
         List<Page> res = new ArrayList<>();
         for(int i=0;i<numPages();i++){
-            HeapPageId heapPageId = new HeapPageId(getId(),i);
-            HeapPage heapPage = (HeapPage) Database.getBufferPool().getPage(tid,heapPageId,Permissions.READ_WRITE);
-            if(heapPage==null){
-                throw  new DbException("null");
+//            HeapPageId heapPageId = new HeapPageId(getId(),i);
+//            HeapPage heapPage = (HeapPage) Database.getBufferPool().getPage(tid,heapPageId,Permissions.READ_WRITE);
+//            if(heapPage==null){
+//                throw  new DbException("null");
+////                Database.getBufferPool().unsafeReleasePage(tid,heapPageId);
+////                continue;
+//            }
+//            if(heapPage.getNumEmptySlots()==0){
 //                Database.getBufferPool().unsafeReleasePage(tid,heapPageId);
 //                continue;
+//            }
+//            heapPage.insertTuple(t);
+//            heapPage.markDirty(true,tid);
+//            res.add(heapPage);
+//            return res;
+            try {
+                HeapPageId heapPageId = new HeapPageId(getId(),i);
+                HeapPage heapPage = (HeapPage) Database.getBufferPool().getPage(tid,heapPageId,Permissions.READ_WRITE);
+                if(heapPage==null){
+                    throw  new DbException("null");
+//                Database.getBufferPool().unsafeReleasePage(tid,heapPageId);
+//                continue;
+                }
+                if(heapPage.getNumEmptySlots()==0){
+                    Database.getBufferPool().unsafeReleasePage(tid,heapPageId);
+                    continue;
+                }
+                heapPage.insertTuple(t);
+                heapPage.markDirty(true,tid);
+                res.add(heapPage);
+                return res;
+            } catch (TransactionAbortedException e) {
+                Database.getBufferPool().transactionComplete(tid, false);
             }
-            if(heapPage.getNumEmptySlots()==0){
-                Database.getBufferPool().unsafeReleasePage(tid,heapPageId);
-                continue;
-            }
-            heapPage.insertTuple(t);
-            heapPage.markDirty(true,tid);
-            res.add(heapPage);
-            return res;
         }
         //新建一个page
         //The page number in that table为什么是numPages()
