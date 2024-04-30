@@ -20,19 +20,29 @@ import java.util.Arrays;
  * @see BufferPool
  *
  */
+// 用于记录整个B+树中的一个页面的使用情况
 public class BTreeHeaderPage implements Page {
+	// 脏页标记和事务id
 	private volatile boolean dirty = false;
 	private volatile TransactionId dirtier = null;
-	
+
+	// 索引的大小，也就是每一个指针的大小
+	// ??
 	final static int INDEX_SIZE = Type.INT_TYPE.getLen();
 
-	final BTreePageId pid;
-	final byte[] header;
-	final int numSlots;
+	final BTreePageId pid; //当前节点的BTreePageId
+	final byte[] header; //记录每一个page的使用情况，对应一个个pageNo
+	final int numSlots; //记录能存储的page使用情况数量
 
-	private int nextPage; // next header page or 0
-	private int prevPage; // previous header page or 0
+	private int nextPage; // next header page or 0 下一个header page的pageNo，如果是最后一个，就是0
+	private int prevPage; // previous header page or 0 上一个header page的pageNo，如果是第一个，就是0
 
+	/**
+	 * 这个page其实就和INTERNAL和LEAF中的byte[] header作用类似，就是当做一种标记记录，来记录每一个pageNo的使用情况，
+	 * 当删除一页时，就可以调用BTreeFile.setEmptyPage()函数，
+	 * 进而调用BTreeHeaderPage.markSlotUsed()函数将header中指定的pageNo设置为unused。
+	 * */
+	// 存储旧的数据，oldDataLock是用于并发synchronized的锁
 	byte[] oldData;
 	private final Byte oldDataLock= (byte) 0;
 

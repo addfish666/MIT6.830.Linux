@@ -23,12 +23,18 @@ import simpledb.storage.RecordId;
  *
  */
 public class BTreeInternalPage extends BTreePage {
-	private final byte[] header;
-	private final Field[] keys;
-	private final int[] children;
-	private final int numSlots;
-	
+	private final byte[] header; // 储存slot使用情况
+	private final Field[] keys; // 存储key的数组
+	private final int[] children; // 存储page的序号，用于每个key指向左右children的point 也因此如果keys是m，children则是m+1。
+	private final int numSlots; // 内部节点中最多能存储指针的数量
+
+	//孩子节点的类型（内部节点或叶节点）
 	private int childCategory; // either leaf or internal
+
+	/**
+	 * 其实内部节点可以看成保存着一个个BTreeEntry，内部节点对key的查找、插入、删除、迭代，都是以entry为单位的。
+	 * 通过BTreeEntry可以获取key、LeftChild、RightChild这三种信息，然后存入相应数组中。
+	 * */
 
 	public void checkRep(Field lowerBound, Field upperBound, boolean checkOccupancy, int depth) {
 		Field prev = lowerBound;
@@ -37,15 +43,21 @@ public class BTreeInternalPage extends BTreePage {
 		Iterator<BTreeEntry> it  = this.iterator();
 		while (it.hasNext()) {
 			Field f = it.next().getKey();
+			// 这个断言检查B树页面中的键是否按照升序排列
 			assert(null == prev || prev.compare(Op.LESS_THAN_OR_EQ,f));
 			prev = f;
 		}
 
+		// 这个断言检查最后一个键是否小于或等于给定的上界（upperBound）
         assert null == upperBound || null == prev || (prev.compare(Op.LESS_THAN_OR_EQ, upperBound));
 
+		// 这个断言检查B树页面的填充率是否足够
         assert !checkOccupancy || depth <= 0 || (getNumEntries() >= getMaxEntries() / 2);
 	}
-	
+	/**
+	 * 下面的entry指的是什么
+	 * extra bytes的具体含义
+	 * */
 	/**
 	 * Create a BTreeInternalPage from a set of bytes of data read from disk.
 	 * The format of a BTreeInternalPage is a set of header bytes indicating
@@ -124,6 +136,7 @@ public class BTreeInternalPage extends BTreePage {
 		int bitsPerEntryIncludingHeader = keySize * 8 + INDEX_SIZE * 8 + 1;
 		// extraBits are: one parent pointer, 1 byte for child page category, 
 		// one extra child pointer (node with m entries has m+1 pointers to children), 1 bit for extra header
+		// one extra child pointer??
 		int extraBits = 2 * INDEX_SIZE * 8 + 8 + 1;
         return (BufferPool.getPageSize()*8 - extraBits) / bitsPerEntryIncludingHeader;
 	}

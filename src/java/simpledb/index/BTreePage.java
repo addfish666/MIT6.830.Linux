@@ -18,16 +18,23 @@ import simpledb.transaction.TransactionId;
  *
  */
 public abstract class BTreePage implements Page {
+	// 脏页标记和事务id
 	protected volatile boolean dirty = false;
 	protected volatile TransactionId dirtier = null;
 
+	// 索引的大小，也就是每一个指针的大小
+	// 以页节点为例，每一个页节点都有三个索引指针：left sibling pointer, right sibling pointer, parent pointer
+	// 索引可以理解为BTreePageId中的pgNo
 	protected final static int INDEX_SIZE = Type.INT_TYPE.getLen();
 
-	protected final BTreePageId pid;
-	protected final TupleDesc td;
-	protected final int keyField;
+	protected final BTreePageId pid; //当前节点的BTreePageId
+	protected final TupleDesc td; //当前节点的tuple元数据
+	protected final int keyField; //索引的关键字字段下标
 
+	//当前page的父page，如果是根节点那么就是0
+	//这里的ID是指BTreePageId中的pgno属性
 	protected int parent; // parent is always internal node or 0 for root node
+	// 存储旧的数据，oldDataLock是用于并发synchronized的锁
 	protected byte[] oldData;
 	protected final Byte oldDataLock= (byte) 0;
 

@@ -20,13 +20,17 @@ import java.io.*;
  *
  */
 public class BTreeLeafPage extends BTreePage {
-	private final byte[] header;
-	private final Tuple[] tuples;
-	private final int numSlots;
-	
-	private int leftSibling; // leaf node or 0
-	private int rightSibling; // leaf node or 0
+	private final byte[] header; // 储存slot使用情况
+	private final Tuple[] tuples; // 存放的具体元组数据
+	private final int numSlots; // 叶节点中最多能存储指针的数量
 
+	// 页节点的双向链表结构
+	private int leftSibling; // leaf node or 0 左兄弟的pageNo，用于获取左兄弟的BTreePageId，为0则没有左兄弟
+	private int rightSibling; // leaf node or 0 右兄弟的pageNo，用于获取右兄弟的BTreePageId，为0则没有右兄弟
+	/**
+	 * 叶节点和内部节点不一样的地方在于，
+	 * 其保存的是一个个真正的数据，也就是保存着一个个Tuple。还有就是其的链表结构用于顺序查找。
+	 * */
 	public void checkRep(int fieldid, Field lowerBound, Field upperBound, boolean checkoccupancy, int depth) {
 		Field prev = lowerBound;
 		assert(this.getId().pgcateg() == BTreePageId.LEAF);

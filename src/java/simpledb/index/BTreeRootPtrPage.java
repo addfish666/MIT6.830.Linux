@@ -17,16 +17,16 @@ public class BTreeRootPtrPage implements Page {
 	// size of this page
 	public final static int PAGE_SIZE = 9;
 
-	private boolean dirty = false;
+	private boolean dirty = false; // 是否是脏页
 	private TransactionId dirtier = null;
 
 	private final BTreePageId pid;
 
-    private int root;
-	private int rootCategory;
-	private int header;
+    private int root; // 根节点的value
+	private int rootCategory; // 根节点类型
+	private int header; // 储存slot使用情况
 
-	private byte[] oldData;
+	private byte[] oldData; // 用于回滚
 
 	/**
 	 * Constructor.

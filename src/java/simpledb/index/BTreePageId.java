@@ -15,10 +15,14 @@ public class BTreePageId implements PageId {
 	public final static int LEAF = 2;
 	public final static int HEADER = 3;
 
-	private final int tableId;
-	private final int pgNo;
-	private final int pgcateg;
-
+	private final int tableId; // 该page所在table的id
+	private final int pgNo; // 该page所在page的序号（table中的第几个页）
+	private final int pgcateg; // 用于标识BTreePage的类型，也就是ROOT_PTR、INTERNAL、LEAF、HEADER这四种类型
+/**
+ * 1 ROOT_PTR是一个指向root节点的指针
+ * 2 INTERNAL和LEAF是一棵B+树中包含的节点
+ * 3 HEADER主要是标记页的使用情况
+ * */
 	static public String categToString(int categ) {
 		switch (categ) {
 			case ROOT_PTR:

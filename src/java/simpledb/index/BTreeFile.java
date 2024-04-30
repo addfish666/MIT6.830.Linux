@@ -188,7 +188,38 @@ public class BTreeFile implements DbFile {
                                        Field f)
 					throws DbException, TransactionAbortedException {
 		// some code goes here
-        return null;
+		// some code goes here
+		//1. 如果是叶子节点，直接返回
+		if(pid.pgcateg() == BTreePageId.LEAF){
+			return (BTreeLeafPage) getPage(tid,dirtypages,pid,perm);
+		}
+		BTreeInternalPage page = (BTreeInternalPage) getPage(tid,dirtypages,pid,perm);
+		Iterator<BTreeEntry> iterator = page.iterator();
+		//2. 如果filed为空，找到最左边的节点
+		if(f==null){
+			if(iterator.hasNext()){
+				return findLeafPage(tid,dirtypages,iterator.next().getLeftChild(),perm,f);
+			}
+			return null;
+		}
+
+		BTreeEntry next = null;
+		//3. 否则，内部节点查找符合条件的entry，并递归查找
+		while(iterator.hasNext()){
+			next =  iterator.next();
+			Field key = next.getKey();
+			//当有重复值的时候 节点分裂有可能一半在左边一半在右边，所以是小于等于
+			if(f.compare(Op.LESS_THAN_OR_EQ,key)){
+				return findLeafPage(tid,dirtypages,next.getLeftChild(),perm,f);
+			}
+		}
+
+		//最后一个entry的右子节点
+		if(next!=null){
+			return findLeafPage(tid,dirtypages,next.getRightChild(),perm,f);
+		}
+
+		return null;
 	}
 	
 	/**

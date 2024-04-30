@@ -20,6 +20,7 @@ import java.io.Serializable;
  * @see BTreeInternalPage#updateEntry(BTreeEntry)
  *
  */
+// BTreeInternalPage所更新的单位，虽然BTreeInternalPage页面中存储的是keys与children，但是实际更新（查找、插入、删除等）的单位则是BTreeEntry对象。
 public class BTreeEntry implements Serializable {
 
 	private static final long serialVersionUID = 1L;
@@ -27,22 +28,22 @@ public class BTreeEntry implements Serializable {
 	/**
 	 * The key of this entry
 	 * */
-	private Field key;
+	private Field key; // entry的key 内部节点中的key
 
 	/**
 	 * The left child page id
 	 * */
-	private BTreePageId leftChild;
+	private BTreePageId leftChild; // 左孩子的BTreePageId
 
 	/**
 	 * The right child page id
 	 * */
-	private BTreePageId rightChild;
+	private BTreePageId rightChild; // 右孩子的BTreePageId
 
 	/**
 	 * The record id of this entry
 	 * */
-	private RecordId rid; // null if not stored on any page
+	private RecordId rid; // null if not stored on any page 记录entry位于哪个page 标识该entry所在的位置。（即该entry是哪个page中的）
 
 	/**
 	 * Constructor to create a new BTreeEntry
