@@ -21,8 +21,8 @@ import java.io.*;
  */
 public class BTreeLeafPage extends BTreePage {
 	private final byte[] header; // 储存slot使用情况
-	private final Tuple[] tuples; // 存放的具体元组数据
-	private final int numSlots; // 叶节点中最多能存储指针的数量
+	private final Tuple[] tuples; // 存储该page的所有tuple
+	private final int numSlots; // 叶节点中能存储的tuple数量
 
 	// 页节点的双向链表结构
 	private int leftSibling; // leaf node or 0 左兄弟的pageNo，用于获取左兄弟的BTreePageId，为0则没有左兄弟

@@ -26,7 +26,7 @@ public class BTreeInternalPage extends BTreePage {
 	private final byte[] header; // 储存slot使用情况
 	private final Field[] keys; // 存储key的数组
 	private final int[] children; // 存储page的序号，用于每个key指向左右children的point 也因此如果keys是m，children则是m+1。
-	private final int numSlots; // 内部节点中最多能存储指针的数量
+	private final int numSlots; // 不是key的数量，而是内部节点中能存储的指针的数量（即n，内部节点中最多能存储key的数量为n-1）
 
 	//孩子节点的类型（内部节点或叶节点）
 	private int childCategory; // either leaf or internal
@@ -68,7 +68,7 @@ public class BTreeInternalPage extends BTreePage {
 	 *  Specifically, the number of entries is equal to: <p>
 	 *          floor((BufferPool.getPageSize()*8 - extra bytes*8) / (entry size * 8 + 1))
 	 * <p> where entry size is the size of entries in this index node
-	 * (key + child pointer), which can be determined via the key field and 
+	 * , which can be determined via the key field and
 	 * {@link Catalog#getTupleDesc}.
 	 * The number of 8-bit header words is equal to:
 	 * <p>

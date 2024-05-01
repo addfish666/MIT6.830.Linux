@@ -22,8 +22,8 @@ public abstract class BTreePage implements Page {
 	protected volatile boolean dirty = false;
 	protected volatile TransactionId dirtier = null;
 
-	// 索引的大小，也就是每一个指针的大小
-	// 以页节点为例，每一个页节点都有三个索引指针：left sibling pointer, right sibling pointer, parent pointer
+	// 页索引的大小，也就是每一个指向页指针的大小
+	// 以叶节点为例，每一个页节点都有三个索引指针：left sibling pointer, right sibling pointer, parent pointer
 	// 索引可以理解为BTreePageId中的pgNo
 	protected final static int INDEX_SIZE = Type.INT_TYPE.getLen();
 
@@ -52,6 +52,7 @@ public abstract class BTreePage implements Page {
 	 * {@link Catalog#getTupleDesc}.
 	 * The number of 8-bit header words is equal to:
 	 * <p>
+	 *     +1 ??
 	 *      ceiling((no. entry slots + 1) / 8)
 	 * <p>
 	 * @see Database#getCatalog

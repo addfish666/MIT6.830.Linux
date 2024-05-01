@@ -27,7 +27,7 @@ public class BTreeHeaderPage implements Page {
 	private volatile TransactionId dirtier = null;
 
 	// 索引的大小，也就是每一个指针的大小
-	// ??
+	// ?? -> 指针可以用于寻找一个页，BTreePageId中的成员变量pgNo可以用作指针
 	final static int INDEX_SIZE = Type.INT_TYPE.getLen();
 
 	final BTreePageId pid; //当前节点的BTreePageId

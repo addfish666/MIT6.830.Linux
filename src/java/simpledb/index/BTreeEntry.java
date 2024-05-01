@@ -28,7 +28,7 @@ public class BTreeEntry implements Serializable {
 	/**
 	 * The key of this entry
 	 * */
-	private Field key; // entry的key 内部节点中的key
+	private Field key; // 内部节点中的key
 
 	/**
 	 * The left child page id
