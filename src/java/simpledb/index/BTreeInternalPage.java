@@ -457,6 +457,16 @@ public class BTreeInternalPage extends BTreePage {
 	 *         table id, or child page category is a mismatch, or the entry is invalid
 	 * @param e The entry to add.
 	 */
+	/**
+	 * 这段代码中的 insertEntry 方法用于向B+树的内部页中插入一个条目。插入操作主要分为以下几个步骤：
+	 *
+	 * 检查待插入的条目是否符合插入条件，包括键值类型、表ID、子节点类别等。
+	 * 如果当前页是空的，则直接将待插入的条目放在第一个槽位上。
+	 * 如果当前页不为空，则找到一个合适的位置将待插入的条目插入，同时保持槽位的顺序有序。
+	 * 插入条目后，需要将其他条目向后移动或向前移动，以腾出空间给新插入的条目。
+	 * 更新记录ID等相关信息。
+	 * 整体思路是通过查找合适的位置将待插入的条目插入到内部页的有序槽位中，并保持有序性
+	 * */
 	public void insertEntry(BTreeEntry e) throws DbException {
 		if (!e.getKey().getType().equals(td.getFieldType(keyField)))
 			throw new DbException("key field type mismatch, in insertEntry");
