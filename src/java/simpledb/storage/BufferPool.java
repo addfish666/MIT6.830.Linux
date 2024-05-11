@@ -297,8 +297,11 @@ public class BufferPool {
             if(page != null && page.isDirty() != null) {
                 DbFile dbFile = Database.getCatalog().getDatabaseFile(page.getId().getTableId());
                 try {
-//                    page.markDirty(false,null);
+                    Database.getLogFile().logWrite(page.isDirty(),page.getBeforeImage(),page);
+                    Database.getLogFile().force();
+                    page.markDirty(false,null);
                     dbFile.writePage(page);
+                    page.setBeforeImage();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -342,8 +345,11 @@ public class BufferPool {
         if(page.isDirty() != null) {
             DbFile dbFile = Database.getCatalog().getDatabaseFile(pid.getTableId());
             try {
+                Database.getLogFile().logWrite(page.isDirty(),page.getBeforeImage(),page);
+                Database.getLogFile().force();
                 page.markDirty(false, null);
                 dbFile.writePage(page);
+                page.setBeforeImage();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -362,8 +368,11 @@ public class BufferPool {
             if(page != null && page.isDirty() != null && page.isDirty().equals(tid)) {
                 DbFile dbFile = Database.getCatalog().getDatabaseFile(page.getId().getTableId());
                 try {
+                    Database.getLogFile().logWrite(page.isDirty(), page.getBeforeImage(), page);
+                    Database.getLogFile().force();
+
                     page.markDirty(false, null);
-                    dbFile.writePage(page);
+//                    dbFile.writePage(page);
                     page.setBeforeImage();
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -383,13 +392,13 @@ public class BufferPool {
         Page page = buffer.getTail().prev.value;
         if(page != null && page.isDirty() != null) {
             //将脏页写入磁盘
-//            try {
-//                flushPage(page.getId());
-//            }catch (IOException e) {
-//                e.printStackTrace();
-//            }
+            try {
+                flushPage(page.getId());
+            }catch (IOException e) {
+                e.printStackTrace();
+            }
             // lab4 ex3 需要选取一个非脏页进行置换
-            findNotDirty();
+//            findNotDirty();
         } else {
             //不是脏页没改过，不需要写磁盘
 //            discardPage(page.getId());
