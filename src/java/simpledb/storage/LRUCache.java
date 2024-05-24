@@ -6,6 +6,10 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * 自己实现的一个LRU cache,主要就是map+链表实现
  */
+/**
+ * K:PageId
+ * v:Page
+ * */
 public class LRUCache<K, V> {
 
     class DLinkedNode {

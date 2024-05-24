@@ -47,7 +47,7 @@ public class AggregateIter implements OpIterator {
                     tuple.setField(1, new IntField(group.get(groupField).size()));
                 } else {
                     //此情况表示没有设置分组
-                    tuple.setField(1,new IntField(group.get(groupField).size()));
+                    tuple.setField(0,new IntField(group.get(groupField).size()));
                 }
                 resultSet.add(tuple);
             }

@@ -30,6 +30,7 @@ public enum Type implements Serializable {
 
     }, STRING_TYPE() {
         @Override
+        // 4个字节用来存储长度信息
         public int getLen() {
             return STRING_LEN+4;
         }
